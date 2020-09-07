@@ -6,5 +6,5 @@ except FileNotFoundError:
     print('The data file is missing.')
 except PermissionError:
     print('This is not allowed')
-except:
-    print('Some other error occurred.')
+except Exception as err:
+    print('Some other error occurred.', str(err))
