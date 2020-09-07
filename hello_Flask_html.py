@@ -7,7 +7,6 @@ app.config['dbconfig'] = {'host': '127.0.0.1',
                           'user': 'vsearh',
                           'password': 'vsearchpasswd',
                           'database': 'vsearchlogDB', }#Словарь с параметрами соедининения
-app.secret_key = 'YouGenius'
 @app.route('/login')
 def do_login() -> str:
     session['logged_in'] = True
@@ -74,6 +73,7 @@ def view_the_log() ->'html':
     except Exception as err:
         print('Something went wrong:', str(err))
     return 'Error'
+app.secret_key = 'YouGenius'
 logged_in = False
 if __name__ == '__main__':#Заготовка под pythonanywhere
     app.run(debug=True)
