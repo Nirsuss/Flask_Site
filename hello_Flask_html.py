@@ -40,7 +40,10 @@ def do_search() ->'html':
     letters =  request.form['letters']
     title = 'Твои результаты: '
     results = str(search4letters(phrase, letters))
-    log_request(request, results)
+    try:
+        log_request(request, results)
+    except Exception as err:
+        print('*****Login failed with this error:', str(err)) #Универсальный обработчик исключений
     return render_template('Result.html', the_phrase=phrase, the_letters=letters, the_results=results, the_title=title,)
 
 @app.route('/')#Декоратор с URL
