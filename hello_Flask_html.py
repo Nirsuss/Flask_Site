@@ -1,11 +1,22 @@
-from flask import Flask, render_template, request, escape #Импортирование класса Flask из модуля flask
+from flask import Flask, render_template, request, escape, session #Импортирование класса Flask из модуля flask
 import mysql.connector
 from search import search4letters
+from checker import check_logged_in
 app = Flask(__name__)  #Создание объекта и присвание его переменной app
 dbconfig = {'host': '127.0.0.1',
                           'user': 'vsearh',
                           'password': 'vsearchpasswd',
                           'database': 'vsearchlogDB', }#Словарь с параметрами соедининения
+@app.route('/login')
+def do_login() -> str:
+    session['logged_in'] = True
+    return 'You are now logged in.'
+
+@app.route('/logout')
+def do_logout() -> str:
+    session.pop('logged_in')
+    return 'You are now logged out'
+
 def log_request(req: 'flask_request', res: str) -> None:
     """Журналирует веб-запрос и возвращает результаты"""
     conn = mysql.connector.connect(**dbconfig)
