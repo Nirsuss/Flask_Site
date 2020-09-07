@@ -1,12 +1,13 @@
 from flask import Flask, render_template, request, escape, session #Импортирование класса Flask из модуля flask
-import mysql.connector
+from DBcm import UseDatabase
 from search import search4letters
 from checker import check_logged_in
 app = Flask(__name__)  #Создание объекта и присвание его переменной app
-dbconfig = {'host': '127.0.0.1',
+app.config['dbconfig'] = {'host': '127.0.0.1',
                           'user': 'vsearh',
                           'password': 'vsearchpasswd',
                           'database': 'vsearchlogDB', }#Словарь с параметрами соедининения
+app.secret_key = 'YouGenius'
 @app.route('/login')
 def do_login() -> str:
     session['logged_in'] = True
@@ -19,23 +20,20 @@ def do_logout() -> str:
 
 def log_request(req: 'flask_request', res: str) -> None:
     """Журналирует веб-запрос и возвращает результаты"""
-    conn = mysql.connector.connect(**dbconfig)
-    cursor = conn.cursor()
-    _SQL = """insert into log
-        (phrase, letters, ip, browser_string, results)
-        values
-        (%s, %s, %s, %s, %s)"""#Создание строки с текстом запроса для записи в BD
-    cursor.execute(_SQL, (req.form['phrase'],
-                          req.form['letters'],
-                          req.remote_addr,
-                          req.user_agent.browser,
-                          res, ))
-    conn.commit()
-    cursor.close()
-    conn.close()
+    with UseDatabase(app.config['dbconfig']) as cursor:
+        _SQL = """insert into log
+                     (phrase, letters, ip, browser_string, results)
+                      values
+                      (%s, %s, %s, %s, %s)"""
+        cursor.execute(_SQL, (req.form['phrase'],
+                              req.form['letters'],
+                              req.remote_addr,
+                              req.user_agent.browser,
+                              res,))
 
 @app.route('/123', methods=['POST'])
 def do_search() ->'html':
+
     phrase = request.form['phrase']
     letters =  request.form['letters']
     title = 'Твои результаты: '
@@ -49,18 +47,24 @@ def do_search() ->'html':
 @app.route('/')#Декоратор с URL
 
 @app.route('/entry')
+@check_logged_in
 def entry_pages() ->'html':
     return render_template('entry.html', The_Title='Welcome to search4letters on the web! ')
 
 @app.route('/viewlog')#Просмотр лог файла в браузере
+@check_logged_in
 def view_the_log() ->'html':
-    contents = []
-    with open('vsearch.log') as log:
-        for line in log:
-            contents.append([])
-            for item in line.split('|'):
-                contents[-1].append(escape(item))
-    titles = ('Form Data', 'Remote_addr', 'User_agent', 'Result')
+    try:
+        with UseDatabase(app.config['dbconfig']) as cursor:
+            _SQL = """select phrase, letters, ip, browser_string, results
+                         from log"""
+            cursor.execute(_SQL)
+            contents = cursor.fetchall()
+            titles = ('Phrase', 'Letters', 'Remote_addr', 'User_agent', 'Results')
+    except mysql.connector.errors.InterfaceErrore as err:
+        print('Is your DataBase switched on? Error:', str(err))
+    except Exception as err:
+        print('Something went wrong:', str(err))
     return  render_template('viewlog.html',
                             The_Title='View Log',
                             the_row_titles=titles,
