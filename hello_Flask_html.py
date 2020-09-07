@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, escape, session #Импортирование класса Flask из модуля flask
-from DBcm import UseDatabase
+from DBcm import UseDatabase,ConnectionError
 from search import search4letters
 from checker import check_logged_in
 app = Flask(__name__)  #Создание объекта и присвание его переменной app
@@ -61,14 +61,15 @@ def view_the_log() ->'html':
             cursor.execute(_SQL)
             contents = cursor.fetchall()
             titles = ('Phrase', 'Letters', 'Remote_addr', 'User_agent', 'Results')
-    except mysql.connector.errors.InterfaceErrore as err:
+        return render_template('viewlog.html',
+                                   The_Title='View Log',
+                                   the_row_titles=titles,
+                                   the_data=contents, )
+    except ConnectionError as err:
         print('Is your DataBase switched on? Error:', str(err))
     except Exception as err:
         print('Something went wrong:', str(err))
-    return  render_template('viewlog.html',
-                            The_Title='View Log',
-                            the_row_titles=titles,
-                            the_data=contents,)
+    return 'Error'
 logged_in = False
 if __name__ == '__main__':#Заготовка под pythonanywhere
     app.run(debug=True)
